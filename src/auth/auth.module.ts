@@ -6,9 +6,9 @@ import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
-  imports: [ConfigModule, JwtModule.registerAsync({})],
+  imports: [ConfigModule, JwtModule.register({})],
   providers: [AuthService, JwtAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}
