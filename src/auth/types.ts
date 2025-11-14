@@ -15,3 +15,8 @@ export interface IAuthRequest extends Request {
   user?: IUserPayload;
 }
 
+export interface IJWTPayload {
+  user: IUserPayload;
+  exp: number;
+  iat: number;
+}

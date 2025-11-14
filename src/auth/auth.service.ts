@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MOCK_USER } from './constants';
-import { IUser, IUserPayload } from './types';
+import { IJWTPayload, IUser, IUserPayload } from './types';
 
 @Injectable()
 export class AuthService {
@@ -21,20 +21,26 @@ export class AuthService {
   }
 
   private createAccessToken(user: IUserPayload): string {
-    return this.jwt.sign(user, {
-      secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.config.getOrThrow<string>(
-        'JWT_ACCESS_EXPIRES_IN',
-      ) as JwtSignOptions['expiresIn'],
-    });
+    return this.jwt.sign(
+      { user },
+      {
+        secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.config.getOrThrow<string>(
+          'JWT_ACCESS_EXPIRES_IN',
+        ) as JwtSignOptions['expiresIn'],
+      },
+    );
   }
   private createRefreshToken(user: IUserPayload): string {
-    return this.jwt.sign(user, {
-      secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      expiresIn: this.config.getOrThrow<string>(
-        'JWT_REFRESH_EXPIRES_IN',
-      ) as JwtSignOptions['expiresIn'],
-    });
+    return this.jwt.sign(
+      { user },
+      {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.config.getOrThrow<string>(
+          'JWT_REFRESH_EXPIRES_IN',
+        ) as JwtSignOptions['expiresIn'],
+      },
+    );
   }
 
   login(username: string, password: string) {
@@ -47,6 +53,28 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  refresh(refreshToken?: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    try {
+      const payload = this.jwt.verify<IJWTPayload>(refreshToken, {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      });
+
+      const newAccessToken = this.createAccessToken(payload.user);
+      const newRefreshToken = this.createRefreshToken(payload.user);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   toUserPayload(localUser: IUser): IUserPayload {
