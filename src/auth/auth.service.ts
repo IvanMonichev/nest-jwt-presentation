@@ -8,13 +8,9 @@ import {
   NotFoundException,
   UnauthorizedException
 } from '@nestjs/common'
-import { JwtService, JwtSignOptions } from '@nestjs/jwt'
-import type { ConfigService, ConfigType } from '@nestjs/config'
-import {
-  IJWTPayload,
-  IAccessPayload,
-  IUserPayload
-} from '../shared/types/auth.types'
+import { JwtService } from '@nestjs/jwt'
+import type { ConfigType } from '@nestjs/config'
+import { IAccessPayload } from '../shared/types/auth.types'
 import { randomUUID } from 'node:crypto'
 import { RefreshTokenService } from '../refresh-token/refresh-token.service'
 import jwtConfig from '../config/auth-config/jwt.config'
@@ -98,26 +94,22 @@ export class AuthService {
     }
   }
 
-  public async setCookie(
-    res: Response,
-    accessToken: string,
-    refreshToken: string
-  ) {
-    const accessTtl = this.jwtOptions.accessTokenExpiresIn
-    const refreshTtl = this.jwtOptions.refreshTokenExpiresIn
+  public setCookie(res: Response, accessToken: string, refreshToken: string) {
+    // const accessTtl = this.jwtOptions.accessTokenExpiresIn
+    // const refreshTtl = this.jwtOptions.refreshTokenExpiresIn
 
     res.cookie(CookieKey.Access, accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: false,
-      maxAge: accessTtl
+      httpOnly: true, // cookie недоступна через JS (document.cookie); защита от XSS
+      secure: false, // передаётся по HTTP и HTTPS; в проде ставится true (только HTTPS)
+      sameSite: false // cookie отправляется даже при любых внешних запросах
+      // maxAge: accessTtl // время жизни cookie в миллисекундах
     })
 
     res.cookie(CookieKey.Refresh, refreshToken, {
-      httpOnly: true,
-      secure: false, // только для демонстрации
-      sameSite: 'lax',
-      maxAge: refreshTtl
+      httpOnly: true, // защищает refresh cookie от доступа через JS
+      secure: false, // для локальной разработки; на проде обязательно true
+      sameSite: 'lax' // отправляется при навигации внутри сайта и обычных переходах; базовая защита от CSRF
+      // maxAge: refreshTtl // срок жизни refresh cookie
     })
     this.logger.log(
       `Cookies successfully set: [${CookieKey.Access}], [${CookieKey.Refresh}] ${refreshToken}`

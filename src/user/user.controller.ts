@@ -1,13 +1,23 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  UseGuards
+} from '@nestjs/common'
 import { UserService } from './user.service'
-import { ApiResponse, ApiParam } from '@nestjs/swagger'
+import { ApiCookieAuth, ApiParam, ApiResponse } from '@nestjs/swagger'
 import { UserRdo } from './rdo/user.rdo'
 import { RandomValueRdo } from './rdo/random.rdo'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { CookieKey } from '../shared/constants/cookie-key.constant'
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @ApiCookieAuth(CookieKey.Access)
+  @UseGuards(JwtAuthGuard)
   @ApiParam({ name: 'username', example: 'string' })
   @ApiResponse({
     status: 200,
@@ -29,6 +39,8 @@ export class UserController {
     return user
   }
 
+  @ApiCookieAuth(CookieKey.Access)
+  @UseGuards(JwtAuthGuard)
   @ApiParam({ name: 'username', example: 'john_doe' })
   @ApiResponse({
     status: 200,

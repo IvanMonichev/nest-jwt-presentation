@@ -1,12 +1,12 @@
 import {
   Body,
   Controller,
-  Post,
-  Res,
-  Req,
+  HttpCode,
   HttpStatus,
-  UseGuards,
-  HttpCode
+  Post,
+  Req,
+  Res,
+  UseGuards
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { AuthService } from './auth.service'
@@ -24,30 +24,6 @@ import { CookieKey } from '../shared/constants/cookie-key.constant'
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  // @Post('login')
-  // login(@Body() dto: ILoginDto, @Res({ passthrough: true }) res: Response) {
-  //   const { accessToken, refreshToken } = this.authService.login(
-  //     dto.username,
-  //     dto.password
-  //   )
-  //
-  //   res.cookie('access_token', accessToken, {
-  //     httpOnly: true,
-  //     secure: true,
-  //     sameSite: 'lax',
-  //     path: '/'
-  //   })
-  //
-  //   res.cookie('refresh_token', refreshToken, {
-  //     httpOnly: true,
-  //     secure: true,
-  //     sameSite: 'lax',
-  //     path: '/refresh'
-  //   })
-  //
-  //   return { success: true }
-  // }
 
   @ApiBody({ type: LoginUserDto })
   @ApiResponse({
@@ -70,11 +46,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response
   ) {
     const tokens = await this.authService.createTokens(req.user)
-    await this.authService.setCookie(
-      res,
-      tokens.accessToken,
-      tokens.refreshToken
-    )
+    this.authService.setCookie(res, tokens.accessToken, tokens.refreshToken)
     return { userId: req.user.id }
   }
 
@@ -85,8 +57,13 @@ export class AuthController {
     status: HttpStatus.OK,
     description: 'Get a new access/refresh tokens'
   })
-  public async refreshToken(@Req() { user }: { user: IUser }) {
-    return this.authService.createTokens(user)
+  public async refreshToken(
+    @Req() { user }: { user: IUser },
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const tokens = await this.authService.createTokens(user)
+    this.authService.setCookie(res, tokens.accessToken, tokens.refreshToken)
+    return { userId: user.id }
   }
 
   @ApiResponse({
@@ -107,32 +84,9 @@ export class AuthController {
   @ApiCookieAuth(CookieKey.Access)
   @UseGuards(JwtAuthGuard)
   @Post('check')
-  public async checkToken(
+  public checkToken(
     @Req() { user: payload }: Request & { user: IUserPayload }
   ) {
     return payload
   }
-
-  // @Post('refresh')
-  // refresh(@Req() req: IAuthRequest, @Res({ passthrough: true }) res: Response) {
-  //   const { accessToken, refreshToken } = this.authService.refresh(
-  //     req.cookies?.['refresh_token']
-  //   )
-  //
-  //   res.cookie('access_token', accessToken, {
-  //     httpOnly: true,
-  //     secure: true,
-  //     sameSite: 'lax',
-  //     path: '/'
-  //   })
-  //
-  //   res.cookie('refresh_token', refreshToken, {
-  //     httpOnly: true,
-  //     secure: true,
-  //     sameSite: 'lax',
-  //     path: '/auth/refresh'
-  //   })
-  //
-  //   return { success: true }
-  // }
 }

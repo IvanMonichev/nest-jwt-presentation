@@ -1,6 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
-import { ExtractJwt, Strategy } from 'passport-jwt'
+import { Strategy } from 'passport-jwt'
 import type { ConfigType } from '@nestjs/config'
 import { cookieExtractor } from '../../shared/types/cookie-extractor.util'
 import { RefreshTokenService } from '../../refresh-token/refresh-token.service'
@@ -23,6 +23,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   ) {
     super({
       jwtFromRequest: (req) => cookieExtractor(req, CookieKey.Refresh),
+      ignoreExpiration: false,
       secretOrKey: jwtOptions.refreshTokenSecret
     })
   }
